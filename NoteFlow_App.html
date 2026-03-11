@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>NoteFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#F2F4FF;--surface:#FFFFFF;--surface2:#E8ECFF;--surface3:#DDE2FF;
+  --text1:#1A1C2E;--text2:#4A4E6E;--text3:#9296B8;--border:#DDE2FF;
+  --accent:#5468FF;--accent-light:#EEF0FF;--accent2:#FF5C8A;--accent3:#FFB020;--accent4:#00C98B;
+  --nav-h:72px;--top-h:64px;
+}
+[data-theme="dark"]{
+  --bg:#10111F;--surface:#181A2E;--surface2:#1E2138;--surface3:#252842;
+  --text1:#E8EBFF;--text2:#8B8FAE;--text3:#454868;--border:#252842;
+  --accent:#7B8BFF;--accent-light:#1E2138;--accent2:#FF80A8;--accent3:#FFD060;--accent4:#3EEDB8;
+}
+html,body{height:100%;width:100%;font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text1);transition:background .3s,color .3s;overflow:hidden;}
+.app{height:100vh;width:100vw;max-width:480px;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg);transition:background .3s;}
+
+/* TOPBAR */
+.topbar{height:var(--top-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:10;transition:background .3s,border .3s;}
+.tb-title{font-size:22px;font-weight:900;color:var(--text1);flex:1;letter-spacing:-.4px;}
+.icon-btn{width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:background .15s,transform .1s;}
+.icon-btn:active{transform:scale(.92);}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+20px);-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* VIEWS */
+.view{display:none;padding:16px 16px 0;}
+.view.active{display:block;animation:slideIn .22s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* BOTTOM NAV */
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 4px 8px;z-index:20;transition:background .3s,border .3s;}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border-radius:16px;cursor:pointer;transition:background .15s;flex:1;}
+.bnav-item:active{background:var(--surface2);}
+.bnav-item.active .bni{color:var(--accent);}
+.bnav-item.active .bnl{color:var(--accent);font-weight:800;}
+.bni{font-size:22px;line-height:1;color:var(--text3);}
+.bnl{font-size:10px;font-weight:600;color:var(--text3);}
+.bnav-add{width:56px;height:56px;background:var(--accent);border-radius:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 20px rgba(84,104,255,.45);transition:transform .15s;flex-shrink:0;}
+.bnav-add:active{transform:scale(.93);}
+
+/* GREETING */
+.greeting{background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);border-radius:20px;padding:22px;margin-bottom:18px;position:relative;overflow:hidden;}
+.greeting::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.1);}
+.greeting::after{content:'';position:absolute;bottom:-20px;right:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.07);}
+.g-sub{font-size:13px;color:rgba(255,255,255,.75);font-weight:600;margin-bottom:4px;}
+.g-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:-.3px;}
+.g-stats{margin-top:14px;display:flex;gap:20px;}
+.gst{display:flex;align-items:center;gap:6px;}
+.gst-n{font-size:22px;font-weight:900;color:#fff;}
+.gst-l{font-size:11px;color:rgba(255,255,255,.7);font-weight:600;}
+
+/* SECTION */
+.sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;margin-top:4px;}
+.sec-title{font-size:16px;font-weight:800;color:var(--text1);}
+.sec-more{font-size:13px;color:var(--accent);font-weight:700;cursor:pointer;}
+
+/* SUBJECT CARDS */
+.subj-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;margin-bottom:20px;scrollbar-width:none;}
+.subj-scroll::-webkit-scrollbar{display:none;}
+.subj-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px 16px;min-width:148px;cursor:pointer;transition:transform .15s;flex-shrink:0;position:relative;overflow:hidden;}
+.subj-card:active{transform:scale(.96);}
+.subj-bg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.1;pointer-events:none;}
+.subj-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;}
+.subj-name{font-size:14px;font-weight:800;color:var(--text1);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.subj-cnt{font-size:11px;color:var(--text3);font-weight:600;}
+.prog{height:3px;background:var(--surface3);border-radius:4px;margin-top:10px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;}
+
+/* NOTE CARDS */
+.note-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;display:flex;gap:12px;transition:transform .1s;}
+.note-card:active{transform:scale(.98);}
+.nc-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.nc-body{flex:1;min-width:0;}
+.nc-title{font-size:15px;font-weight:800;color:var(--text1);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nc-prev{font-size:12px;color:var(--text3);font-weight:500;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.nc-foot{margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.ndate{font-size:10px;color:var(--text3);font-weight:600;margin-left:auto;}
+
+/* FILTER CHIPS */
+.filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;scrollbar-width:none;padding-bottom:4px;}
+.filter-row::-webkit-scrollbar{display:none;}
+.fchip{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;}
+.fchip.active{background:var(--accent);color:#fff;}
+.fchip:not(.active){background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+
+/* BACK */
+.back-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;width:fit-content;}
+.back-row:active .back-icon{transform:translateX(-3px);}
+.back-icon{font-size:20px;color:var(--text2);transition:transform .15s;}
+.back-lbl{font-size:14px;font-weight:700;color:var(--text2);}
+
+/* SUBJECT PAGE HEADER */
+.subj-page-hdr{border-radius:20px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden;}
+.subj-page-hdr::before{content:'';position:absolute;top:-25px;right:-25px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none;}
+
+/* NOTE DETAIL */
+.nd-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-bottom:14px;}
+.nd-title{font-size:26px;font-weight:900;color:var(--text1);line-height:1.25;margin-bottom:10px;letter-spacing:-.4px;}
+.nd-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.nd-meta-item{font-size:12px;color:var(--text3);font-weight:600;display:flex;align-items:center;gap:5px;}
+.nd-body{font-size:15px;color:var(--text2);line-height:1.9;font-weight:500;padding-bottom:30px;}
+.nd-actions{display:flex;gap:10px;margin-bottom:22px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.nd-actions::-webkit-scrollbar{display:none;}
+.nd-btn{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;color:var(--text1);cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;transition:background .15s;}
+.nd-btn:active{background:var(--surface3);}
+.nd-btn.danger{background:#FF5C8A18;color:#FF5C8A;border-color:#FF5C8A30;}
+
+/* REMINDER CARDS */
+.rem-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:transform .1s;}
+.rem-card:active{transform:scale(.98);}
+.rem-date-box{background:var(--accent-light);border-radius:14px;padding:10px 14px;text-align:center;flex-shrink:0;}
+.rem-day{font-size:22px;font-weight:900;color:var(--accent);line-height:1;}
+.rem-month{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+
+/* SEARCH */
+.search-bar{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:10px;margin-bottom:16px;transition:border .2s;}
+.search-bar:focus-within{border-color:var(--accent);}
+.search-bar input{border:none;background:transparent;font-size:15px;color:var(--text1);font-family:'Nunito',sans-serif;outline:none;flex:1;font-weight:500;}
+.search-bar input::placeholder{color:var(--text3);}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+.moverlay.open{display:flex;animation:fo .2s ease;}
+@keyframes fo{from{opacity:0;}to{opacity:1;}}
+.modal{background:var(--surface);border-radius:28px 28px 0 0;padding:26px 20px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:su .28s cubic-bezier(.22,.61,.36,1);scrollbar-width:none;}
+.modal::-webkit-scrollbar{display:none;}
+@keyframes su{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.m-handle{width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:0 auto 20px;}
+.m-title{font-size:20px;font-weight:900;color:var(--text1);margin-bottom:20px;letter-spacing:-.3px;}
+.mf{margin-bottom:15px;}
+.mlbl{font-size:11px;font-weight:800;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;}
+.minput{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:600;color:var(--text1);font-family:'Nunito',sans-serif;outline:none;transition:border .2s;}
+.minput:focus{border-color:var(--accent);}
+.minput::placeholder{color:var(--text3);font-weight:500;}
+.mtarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:15px;color:var(--text1);font-family:'Nunito',sans-serif;outline:none;resize:none;min-height:120px;line-height:1.7;font-weight:500;transition:border .2s;}
+.mtarea:focus{border-color:var(--accent);}
+.mtarea::placeholder{color:var(--text3);}
+.msel{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:600;color:var(--text1);font-family:'Nunito',sans-serif;outline:none;cursor:pointer;}
+.mfoot{display:flex;gap:10px;margin-top:18px;}
+.mbtn{flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;border:none;transition:transform .1s;}
+.mbtn:active{transform:scale(.97);}
+.mbtn-ghost{background:var(--surface2);color:var(--text1);}
+.mbtn-accent{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(84,104,255,.35);}
+.cprow{display:flex;gap:10px;flex-wrap:wrap;}
+.csw{width:36px;height:36px;border-radius:50%;cursor:pointer;transition:transform .15s,outline .1s;outline:3px solid transparent;outline-offset:3px;}
+.csw:active{transform:scale(1.15);}
+.csw.sel{outline-color:var(--text1);}
+.iprow{display:flex;flex-wrap:wrap;gap:8px;}
+.ichip{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;background:var(--surface2);border:2px solid transparent;transition:border .15s;}
+.ichip:active{transform:scale(1.08);}
+.ichip.sel{border-color:var(--accent);background:var(--accent-light);}
+.sp-row{display:flex;align-items:center;gap:14px;background:var(--surface2);border-radius:18px;padding:14px;margin-bottom:16px;}
+.sp-ic{width:50px;height:50px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--nav-h)+14px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--text1);color:var(--bg);padding:12px 22px;border-radius:30px;font-size:13px;font-weight:700;z-index:100;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-ic{font-size:52px;margin-bottom:12px;}
+.empty-t{font-size:17px;font-weight:800;color:var(--text2);margin-bottom:6px;}
+.empty-s{font-size:13px;font-weight:500;line-height:1.6;}
+
+/* SAVE INDICATOR */
+.save-dot{width:8px;height:8px;border-radius:50%;background:var(--accent4);margin-left:4px;display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="toast" id="toast"></div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-title" id="tb-title">NoteFlow <span class="save-dot" title="Data auto-saving"></span></div>
+    <div class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</div>
+    <div class="icon-btn" onclick="showView('search')" style="margin-left:4px;">🔍</div>
+  </div>
+
+  <div class="scroll" id="scroll">
+
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <div class="greeting">
+        <div class="g-sub" id="greet-time">Good morning 👋</div>
+        <div class="g-title">Ready to study?</div>
+        <div class="g-stats">
+          <div class="gst"><div class="gst-n" id="g-notes">0</div><div class="gst-l">Notes</div></div>
+          <div class="gst"><div class="gst-n" id="g-subj">0</div><div class="gst-l">Subjects</div></div>
+          <div class="gst"><div class="gst-n" id="g-rem">0</div><div class="gst-l">Reminders</div></div>
+        </div>
+      </div>
+      <div class="sec-head">
+        <div class="sec-title">📚 Subjects</div>
+        <div class="sec-more" onclick="openSubjModal()">+ Add</div>
+      </div>
+      <div class="subj-scroll" id="home-subj"></div>
+      <div class="sec-head">
+        <div class="sec-title">🕐 Recent Notes</div>
+        <div class="sec-more" onclick="showView('notes')">See all</div>
+      </div>
+      <div id="home-notes"></div>
+    </div>
+
+    <!-- ALL NOTES -->
+    <div class="view" id="view-notes">
+      <div class="filter-row" id="filter-row"></div>
+      <div id="notes-list"></div>
+    </div>
+
+    <!-- SUBJECT DETAIL -->
+    <div class="view" id="view-subject">
+      <div class="back-row" onclick="goBack()"><div class="back-icon">←</div><div class="back-lbl">Back</div></div>
+      <div class="subj-page-hdr" id="subj-hdr"></div>
+      <div id="subj-notes"></div>
+    </div>
+
+    <!-- NOTE DETAIL -->
+    <div class="view" id="view-note">
+      <div class="back-row" onclick="goBack()"><div class="back-icon">←</div><div class="back-lbl" id="note-back-lbl">Back</div></div>
+      <div id="note-detail"></div>
+    </div>
+
+    <!-- REMINDERS -->
+    <div class="view" id="view-reminders">
+      <div id="rem-list"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="view" id="view-search">
+      <div class="search-bar">
+        <span style="font-size:18px;">🔍</span>
+        <input id="srch" placeholder="Search notes..." oninput="doSearch(this.value)" autocomplete="off"/>
+        <span onclick="document.getElementById('srch').value='';doSearch('')" style="cursor:pointer;font-size:15px;color:var(--text3)">✕</span>
+      </div>
+      <div id="srch-info" style="font-size:13px;color:var(--text3);font-weight:600;margin-bottom:14px;"></div>
+      <div id="srch-list"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="bnav-item active" id="bn-home" onclick="showView('home')"><div class="bni">🏠</div><div class="bnl">Home</div></div>
+    <div class="bnav-item" id="bn-notes" onclick="showView('notes')"><div class="bni">📝</div><div class="bnl">Notes</div></div>
+    <div class="bnav-add" onclick="openNoteModal()"><span style="font-size:28px;color:#fff;line-height:1;">＋</span></div>
+    <div class="bnav-item" id="bn-reminders" onclick="showView('reminders')"><div class="bni">⏰</div><div class="bnl">Reminders</div></div>
+    <div class="bnav-item" id="bn-search" onclick="showView('search');later(()=>document.getElementById('srch').focus())"><div class="bni">🔍</div><div class="bnl">Search</div></div>
+  </div>
+</div>
+
+<!-- ADD NOTE MODAL -->
+<div class="moverlay" id="m-note">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">New Note ✏️</div>
+    <div class="mf"><div class="mlbl">Subject</div><select class="msel" id="n-subj"></select></div>
+    <div class="mf"><div class="mlbl">Title</div><input class="minput" id="n-title" placeholder="Note title..."/></div>
+    <div class="mf"><div class="mlbl">Content</div><textarea class="mtarea" id="n-content" placeholder="Write your notes here..."></textarea></div>
+    <div class="mf"><div class="mlbl">Reminder (optional)</div><input class="minput" id="n-remind" placeholder="e.g. Mar 20"/></div>
+    <div class="mfoot">
+      <button class="mbtn mbtn-ghost" onclick="closeModal('m-note')">Cancel</button>
+      <button class="mbtn mbtn-accent" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SUBJECT MODAL -->
+<div class="moverlay" id="m-subj">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">New Subject 📚</div>
+    <div class="sp-row">
+      <div class="sp-ic" id="sp-ic"></div>
+      <div><div style="font-size:16px;font-weight:800;color:var(--text1);" id="sp-nm">New Subject</div><div style="font-size:12px;color:var(--text3);font-weight:600;margin-top:2px;">0 notes</div></div>
+    </div>
+    <div class="mf"><div class="mlbl">Name</div><input class="minput" id="s-name" placeholder="e.g. Chemistry" oninput="updSP()"/></div>
+    <div class="mf"><div class="mlbl">Icon</div><div class="iprow" id="i-pick"></div></div>
+    <div class="mf"><div class="mlbl">Color</div><div class="cprow" id="c-pick"></div></div>
+    <div class="mfoot">
+      <button class="mbtn mbtn-ghost" onclick="closeModal('m-subj')">Cancel</button>
+      <button class="mbtn mbtn-accent" onclick="saveSubj()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT NOTE MODAL -->
+<div class="moverlay" id="m-edit">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title">Edit Note ✏️</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="mf"><div class="mlbl">Title</div><input class="minput" id="edit-title" placeholder="Note title..."/></div>
+    <div class="mf"><div class="mlbl">Content</div><textarea class="mtarea" id="edit-content" placeholder="Write your notes here..."></textarea></div>
+    <div class="mf"><div class="mlbl">Reminder (optional)</div><input class="minput" id="edit-remind" placeholder="e.g. Mar 20"/></div>
+    <div class="mfoot">
+      <button class="mbtn mbtn-ghost" onclick="closeModal('m-edit')">Cancel</button>
+      <button class="mbtn mbtn-accent" onclick="updateNote()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  LOCAL STORAGE DATABASE 💾
+//  Data permanently save hota hai browser mein
+// ══════════════════════════════════════
+const DB = {
+  get(key)      { try { return JSON.parse(localStorage.getItem('nf_'+key)) || []; } catch(e) { return []; }},
+  set(key, val) { localStorage.setItem('nf_'+key, JSON.stringify(val)); },
+};
+
+// ── DEFAULT DATA (first time only) ──
+function initDB() {
+  if (DB.get('subjects').length === 0) {
+    DB.set('subjects', [
+      {id:1, name:"Mathematics", icon:"📐", color:"#5468FF"},
+      {id:2, name:"Physics",     icon:"⚛️",  color:"#FF5C8A"},
+      {id:3, name:"History",     icon:"📜",  color:"#FFB020"},
+      {id:4, name:"Biology",     icon:"🧬",  color:"#00C98B"},
+    ]);
+    DB.set('notes', [
+      {id:1, sid:1, title:"Calculus – Derivatives",  body:"The derivative of xⁿ is nxⁿ⁻¹. Chain rule: d/dx[f(g(x))] = f′(g(x))·g′(x).",          reminder:"Mar 15", date:"Mar 10"},
+      {id:2, sid:1, title:"Linear Algebra Basics",   body:"Vectors, matrices, linear transformations. Eigenvalues λ satisfy Av = λv.",               reminder:null,     date:"Mar 8"},
+      {id:3, sid:1, title:"Trigonometry Review",     body:"sin²θ + cos²θ = 1. Key identities and unit circle. Essential for integration.",           reminder:null,     date:"Mar 5"},
+      {id:4, sid:2, title:"Newton's Laws",           body:"1st: Inertia. 2nd: F=ma. 3rd: Equal & opposite reaction.",                               reminder:"Mar 14", date:"Mar 9"},
+      {id:5, sid:2, title:"Wave Motion",             body:"v = fλ. Transverse vs longitudinal waves. Period and frequency relationship.",             reminder:null,     date:"Mar 7"},
+      {id:6, sid:3, title:"World War II Overview",   body:"Started 1939, ended 1945. Key battles: Stalingrad, Normandy D-Day.",                      reminder:"Mar 12", date:"Mar 10"},
+      {id:7, sid:3, title:"The Renaissance",         body:"14th–17th century cultural rebirth. Leonardo, Michelangelo, Galileo, Shakespeare.",        reminder:null,     date:"Mar 6"},
+      {id:8, sid:4, title:"Cell Biology",            body:"Membrane, nucleus, mitochondria (ATP), endoplasmic reticulum, Golgi apparatus.",          reminder:"Mar 13", date:"Mar 8"},
+      {id:9, sid:4, title:"Genetics Basics",         body:"DNA double helix. Base pairs: A-T, C-G. Mendel's laws of inheritance.",                   reminder:null,     date:"Mar 6"},
+    ]);
+    DB.set('next_id', 100);
+  }
+}
+
+function nextId() {
+  const id = (DB.get('next_id') || 100) + 1;
+  DB.set('next_id', id);
+  return id;
+}
+
+// ── GETTERS ──
+const getSubjects = ()    => DB.get('subjects');
+const getNotes    = ()    => DB.get('notes');
+const getSubject  = (id)  => getSubjects().find(s => s.id === id);
+const subjNotes   = (sid) => getNotes().filter(n => n.sid === sid);
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let curView = 'home', prevView = 'home', curSid = null, curNid = null;
+let sDark = false, sColor = '#5468FF', sIcon = '📐';
+let activeFilter = 0;
+const PAL   = ["#5468FF","#FF5C8A","#FFB020","#00C98B","#9B5FF5","#FF7A45","#00C2D8","#E040FB"];
+const ICONS = ["📐","⚛️","📜","🧬","💻","🎨","📊","🌍","🧪","📚","🎵","⚽","🔬","🏛️","✏️","🧮"];
+const later = (fn, ms=80) => setTimeout(fn, ms);
+
+// ══════════════════════════════════════
+//  THEME
+// ══════════════════════════════════════
+function toggleTheme() {
+  sDark = !sDark;
+  document.documentElement.setAttribute('data-theme', sDark ? 'dark' : '');
+  document.getElementById('theme-btn').textContent = sDark ? '☀️' : '🌙';
+  localStorage.setItem('nf_theme', sDark ? 'dark' : 'light');
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ══════════════════════════════════════
+//  GREETING
+// ══════════════════════════════════════
+function setGreeting() {
+  const h = new Date().getHours();
+  const msg = h < 12 ? 'Good morning 👋' : h < 17 ? 'Good afternoon ☀️' : 'Good evening 🌙';
+  document.getElementById('greet-time').textContent = msg;
+}
+
+// ══════════════════════════════════════
+//  VIEWS
+// ══════════════════════════════════════
+function showView(name, sid) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  prevView = curView;
+  curView  = name;
+  const titles = {home:'NoteFlow', notes:'All Notes', subject: sid ? (getSubject(sid)?.name || 'Subject') : 'Subject', note:'Note', reminders:'Reminders', search:'Search'};
+  document.getElementById('tb-title').innerHTML = titles[name] + (name==='home' ? ' <span class="save-dot" title="Auto-saving"></span>' : '');
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  const nm = {home:'bn-home',notes:'bn-notes',reminders:'bn-reminders',search:'bn-search'};
+  if (nm[name]) document.getElementById(nm[name]).classList.add('active');
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('scroll').scrollTop = 0;
+
+  if      (name === 'home')      renderHome();
+  else if (name === 'notes')     renderNotes();
+  else if (name === 'subject' && sid) { curSid = sid; renderSubject(sid); }
+  else if (name === 'reminders') renderReminders();
+  else if (name === 'search')    { document.getElementById('srch-info').textContent = 'Type to search…'; document.getElementById('srch-list').innerHTML = ''; }
+}
+
+function goBack() {
+  if      (curView === 'subject') showView('home');
+  else if (curView === 'note') {
+    if      (prevView === 'subject') showView('subject', curSid);
+    else if (prevView === 'notes')   showView('notes');
+    else if (prevView === 'search')  showView('search');
+    else                             showView('home');
+  }
+  else showView('home');
+}
+
+// ══════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════
+function renderHome() {
+  setGreeting();
+  const notes = getNotes(), subjects = getSubjects();
+  document.getElementById('g-notes').textContent = notes.length;
+  document.getElementById('g-subj').textContent  = subjects.length;
+  document.getElementById('g-rem').textContent   = notes.filter(n => n.reminder).length;
+
+  document.getElementById('home-subj').innerHTML =
+    subjects.map(subjCardHTML).join('') +
+    `<div class="subj-card" onclick="openSubjModal()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--border);background:transparent;min-width:100px;">
+      <div style="font-size:26px;color:var(--text3)">＋</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text3);margin-top:4px;">Add</div>
+    </div>`;
+
+  const recent = notes.slice(0, 4);
+  document.getElementById('home-notes').innerHTML = recent.length
+    ? recent.map(noteCardHTML).join('')
+    : emptyHTML('📝', 'No notes yet', 'Tap + to add your first note');
+}
+
+// ══════════════════════════════════════
+//  ALL NOTES
+// ══════════════════════════════════════
+function renderNotes(filter) {
+  if (filter !== undefined) activeFilter = filter;
+  const subjects = getSubjects();
+  const filters  = [{id:0, label:'All'}, ...subjects.map(s => ({id:s.id, label:`${s.icon} ${s.name}`}))];
+  document.getElementById('filter-row').innerHTML = filters.map(f =>
+    `<div class="fchip ${activeFilter === f.id ? 'active' : ''}" onclick="renderNotes(${f.id})">${f.label}</div>`
+  ).join('');
+  const notes = activeFilter === 0 ? getNotes() : getNotes().filter(n => n.sid === activeFilter);
+  document.getElementById('notes-list').innerHTML = notes.length
+    ? notes.map(noteCardHTML).join('')
+    : emptyHTML('📝', 'No notes here', 'Tap + to add one');
+}
+
+// ══════════════════════════════════════
+//  SUBJECT VIEW
+// ══════════════════════════════════════
+function renderSubject(sid) {
+  const s = getSubject(sid); if (!s) return;
+  const notes = subjNotes(sid);
+  document.getElementById('subj-hdr').style.background = `linear-gradient(135deg,${s.color}ee,${s.color}88)`;
+  document.getElementById('subj-hdr').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:56px;height:56px;border-radius:18px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:28px;">${s.icon}</div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#fff;">${s.name}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);font-weight:600;margin-top:2px;">${notes.length} note${notes.length!==1?'s':''}</div>
+      </div>
+      <div onclick="openNoteModal()" style="margin-left:auto;background:rgba(255,255,255,.2);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;">+ Note</div>
+    </div>`;
+  document.getElementById('subj-notes').innerHTML = notes.length
+    ? notes.map(noteCardHTML).join('')
+    : emptyHTML('📝', 'No notes yet', 'Tap + Note to get started');
+}
+
+// ══════════════════════════════════════
+//  NOTE DETAIL
+// ══════════════════════════════════════
+function showNote(nid) {
+  curNid = nid;
+  const n = getNotes().find(x => x.id === nid);
+  const s = getSubject(n.sid);
+  const backLabels = {subject: s?.name||'Subject', notes:'All Notes', search:'Search', home:'Home'};
+  document.getElementById('note-back-lbl').textContent = backLabels[curView] || 'Back';
+  document.getElementById('note-detail').innerHTML = `
+    <div class="nd-badge" style="background:${s.color}18;color:${s.color};">${s.icon} ${s.name}</div>
+    <div class="nd-title">${n.title}</div>
+    <div class="nd-meta">
+      <div class="nd-meta-item">📅 ${n.date}</div>
+      ${n.reminder ? `<div class="nd-meta-item" style="color:var(--accent3);">⏰ ${n.reminder}</div>` : ''}
+    </div>
+    <div class="nd-actions">
+      <button class="nd-btn" onclick="openEditModal(${n.id})">✏️ Edit</button>
+      <button class="nd-btn danger" onclick="deleteNote(${n.id})">🗑 Delete</button>
+    </div>
+    <div class="nd-body">${n.body || '<em style="color:var(--text3)">No content written yet.</em>'}</div>
+  `;
+  showView('note');
+}
+
+function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  const notes = getNotes().filter(n => n.id !== id);
+  DB.set('notes', notes);
+  toast('🗑 Note deleted!');
+  goBack();
+  if (prevView === 'subject') renderSubject(curSid);
+  else if (prevView === 'notes') renderNotes();
+}
+
+function openEditModal(id) {
+  const n = getNotes().find(x => x.id === id);
+  document.getElementById('edit-id').value      = id;
+  document.getElementById('edit-title').value   = n.title;
+  document.getElementById('edit-content').value = n.body;
+  document.getElementById('edit-remind').value  = n.reminder || '';
+  closeModal('m-note');
+  openModal('m-edit');
+}
+
+function updateNote() {
+  const id    = parseInt(document.getElementById('edit-id').value);
+  const title = document.getElementById('edit-title').value.trim();
+  if (!title) { toast('⚠️ Title cannot be empty!'); return; }
+  const notes = getNotes().map(n => n.id === id ? {
+    ...n,
+    title,
+    body:     document.getElementById('edit-content').value.trim(),
+    reminder: document.getElementById('edit-remind').value.trim() || null,
+  } : n);
+  DB.set('notes', notes);
+  closeModal('m-edit');
+  toast('✅ Note updated!');
+  showNote(id);
+}
+
+// ══════════════════════════════════════
+//  REMINDERS
+// ══════════════════════════════════════
+function renderReminders() {
+  const withRem = getNotes().filter(n => n.reminder);
+  document.getElementById('rem-list').innerHTML = withRem.length
+    ? withRem.map(n => {
+        const s   = getSubject(n.sid);
+        const pts = (n.reminder || '').split(' ');
+        return `<div class="rem-card" onclick="showNote(${n.id})">
+          <div class="rem-date-box">
+            <div class="rem-day">${pts[1]||'—'}</div>
+            <div class="rem-month">${pts[0]||''}</div>
+          </div>
+          <div style="width:44px;height:44px;border-radius:13px;background:${s.color}18;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${s.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
+            <div style="font-size:12px;color:var(--text3);font-weight:600;margin-top:2px;">${s.name}</div>
+          </div>
+          <span class="tag" style="background:#FFB02018;color:#FFB020;">⏰</span>
+        </div>`;
+      }).join('')
+    : emptyHTML('⏰', 'No reminders', 'Add reminders when creating notes');
+}
+
+// ══════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════
+function doSearch(q) {
+  if (!q.trim()) {
+    document.getElementById('srch-info').textContent = 'Type to search…';
+    document.getElementById('srch-list').innerHTML = '';
+    return;
+  }
+  const results = getNotes().filter(n =>
+    n.title.toLowerCase().includes(q.toLowerCase()) ||
+    n.body.toLowerCase().includes(q.toLowerCase())
+  );
+  document.getElementById('srch-info').textContent = `${results.length} result${results.length!==1?'s':''} for "${q}"`;
+  document.getElementById('srch-list').innerHTML = results.length
+    ? results.map(noteCardHTML).join('')
+    : emptyHTML('🔍', 'No results', 'Try different keywords');
+}
+
+// ══════════════════════════════════════
+//  HTML BUILDERS
+// ══════════════════════════════════════
+function subjCardHTML(s) {
+  const c = subjNotes(s.id).length;
+  const p = Math.min(100, c * 18);
+  return `<div class="subj-card" onclick="showView('subject',${s.id})">
+    <div class="subj-bg" style="background:${s.color}"></div>
+    <div class="subj-icon" style="background:${s.color}18">${s.icon}</div>
+    <div class="subj-name">${s.name}</div>
+    <div class="subj-cnt">${c} note${c!==1?'s':''}</div>
+    <div class="prog"><div class="prog-fill" style="width:${p}%;background:${s.color}"></div></div>
+  </div>`;
+}
+
+function noteCardHTML(n) {
+  const s = getSubject(n.sid);
+  if (!s) return '';
+  return `<div class="note-card" onclick="showNote(${n.id})">
+    <div class="nc-icon" style="background:${s.color}18">${s.icon}</div>
+    <div class="nc-body">
+      <div class="nc-title">${n.title}</div>
+      <div class="nc-prev">${n.body || 'No content'}</div>
+      <div class="nc-foot">
+        ${n.reminder ? `<span class="tag" style="background:#FFB02018;color:#FFB020;">⏰ ${n.reminder}</span>` : ''}
+        <span class="ndate">${n.date}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function emptyHTML(ic, t, s) {
+  return `<div class="empty"><div class="empty-ic">${ic}</div><div class="empty-t">${t}</div><div class="empty-s">${s}</div></div>`;
+}
+
+// ══════════════════════════════════════
+//  ADD NOTE
+// ══════════════════════════════════════
+function openNoteModal() {
+  const subjects = getSubjects();
+  document.getElementById('n-subj').innerHTML = subjects.map(s =>
+    `<option value="${s.id}">${s.icon} ${s.name}</option>`
+  ).join('');
+  if (curSid) document.getElementById('n-subj').value = curSid;
+  ['n-title','n-content','n-remind'].forEach(id => document.getElementById(id).value = '');
+  openModal('m-note');
+}
+
+function saveNote() {
+  const title = document.getElementById('n-title').value.trim();
+  if (!title) { toast('⚠️ Please add a title!'); return; }
+  const now   = new Date();
+  const date  = now.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  const note  = {
+    id:       nextId(),
+    sid:      parseInt(document.getElementById('n-subj').value),
+    title,
+    body:     document.getElementById('n-content').value.trim(),
+    reminder: document.getElementById('n-remind').value.trim() || null,
+    date,
+  };
+  const notes = [note, ...getNotes()];
+  DB.set('notes', notes);
+  closeModal('m-note');
+  toast('✅ Note saved!');
+  if      (curView === 'home')    renderHome();
+  else if (curView === 'notes')   renderNotes();
+  else if (curView === 'subject') renderSubject(curSid);
+}
+
+// ══════════════════════════════════════
+//  ADD SUBJECT
+// ══════════════════════════════════════
+function openSubjModal() {
+  sColor = PAL[0]; sIcon = ICONS[0];
+  document.getElementById('s-name').value = '';
+  updSP(); buildIPick(); buildCPick();
+  openModal('m-subj');
+}
+function updSP() {
+  const n = document.getElementById('s-name')?.value || 'New Subject';
+  document.getElementById('sp-ic').textContent       = sIcon;
+  document.getElementById('sp-ic').style.background  = sColor + '18';
+  document.getElementById('sp-nm').textContent       = n || 'New Subject';
+}
+function buildIPick() {
+  document.getElementById('i-pick').innerHTML = ICONS.map(ic =>
+    `<div class="ichip${ic===sIcon?' sel':''}" onclick="sIcon='${ic}';updSP();buildIPick();">${ic}</div>`
+  ).join('');
+}
+function buildCPick() {
+  document.getElementById('c-pick').innerHTML = PAL.map(c =>
+    `<div class="csw${c===sColor?' sel':''}" style="background:${c}" onclick="sColor='${c}';updSP();buildCPick();buildIPick();"></div>`
+  ).join('');
+}
+function saveSubj() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { toast('⚠️ Please add a name!'); return; }
+  const subjects = [...getSubjects(), {id: nextId(), name, icon: sIcon, color: sColor}];
+  DB.set('subjects', subjects);
+  closeModal('m-subj');
+  toast('✅ Subject created!');
+  renderHome();
+}
+
+// ── MODAL HELPERS ──
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.moverlay').forEach(m =>
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); })
+);
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+initDB();
+// Restore theme
+if (localStorage.getItem('nf_theme') === 'dark') {
+  sDark = true;
+  document.documentElement.setAttribute('data-theme', 'dark');
+  document.getElementById('theme-btn').textContent = '☀️';
+}
+showView('home');
+</script>
+</body>
+</html>
